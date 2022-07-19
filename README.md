@@ -1,5 +1,6 @@
 # OpenCV Visual Odometry
-[![Demo video](https://i.imgur.com/NufVlkx.gif)](https://youtu.be/zcA-jLR3i3s)
+[![opencv_visaul_odometry_demo](https://user-images.githubusercontent.com/61956056/179818485-5ca6c016-6028-420b-949d-d706242092d1.gif)](http://www.youtube.com/watch?v=zcA-jLR3i3s "OpenCV VO")
+
 
 ## Overview
 A ROS package for visual odometry based on OpenCV function:
