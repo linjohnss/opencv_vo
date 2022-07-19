@@ -28,3 +28,10 @@ target_link_libraries(mono_vo
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
 )
+
+add_executable(kitti_logger src/kitti_logger.cpp)
+
+target_link_libraries(kitti_logger
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
