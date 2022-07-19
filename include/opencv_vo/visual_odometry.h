@@ -10,7 +10,6 @@
 #include <ctype.h>
 #include <iostream>
 #include <iterator> // for ostream_iterator
-#include <opencv2/flann/miniflann.hpp>
 #include <sstream>
 #include <string>
 #include <vector>

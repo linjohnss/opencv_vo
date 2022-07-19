@@ -4,7 +4,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
-#include "../include/opencv_vo/vo_features.h"
+#include "../include/opencv_vo/visual_odometry.h"
 
 int Mode = 1;
 bool is_init = false;
@@ -17,9 +17,11 @@ double scale = 1.00;
 Mat traj = Mat::zeros(1000, 1000, CV_8UC3);
 char text[100];
 std::vector<KeyPoint> keypoints;
+/* Realsense camera metrix */
 // Mat cameraMatrix = (Mat1d(3, 3) << 630.1563720703125, 0.0, 642.2313232421875,
 //                                              0.0, 629.5250854492188, 359.1725769042969, 
 //                                              0.0, 0.0, 1.0);
+/* KITTI Dataset 00 camera metrix */
 Mat cameraMatrix = (Mat1d(3, 3) << 718.856, 0.0, 607.1928,
                                              0.0, 718.856, 185.2157, 
                                              0.0, 0.0, 1.0);
@@ -87,7 +89,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
                int y = int(t_f.at<double>(2)) + 400;
                circle(traj, Point(x, y), 0, CV_RGB(255, 0, 0), 2);
                rectangle(traj, Point(10, 30), Point(550, 50), CV_RGB(0, 0, 0),
-                         CV_FILLED);
+                         cv::FILLED);
                sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm",
                     t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2));
                putText(traj, text, Point(10, 50), FONT_HERSHEY_PLAIN, 1,

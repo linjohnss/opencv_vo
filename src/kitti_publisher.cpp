@@ -5,7 +5,7 @@
 #define MAX_FRAME 3500
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "kitti_logger");
+    ros::init(argc, argv, "kitti_publisher");
     ros::NodeHandle nh;
     
     image_transport::ImageTransport it(nh);
@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
         else
             break;
         sprintf(filename, "/home/point/00/image_0/%06d.png", numFrame); 
-        cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);    
+        cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);    
         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
         pub.publish(msg);
         ROS_INFO("publish sequence : %06d.png", numFrame);

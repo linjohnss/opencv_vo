@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES ros_cvodom
+ LIBRARIES opencv_vo
 )
 
 include_directories(
@@ -29,9 +29,9 @@ target_link_libraries(mono_vo
   ${OpenCV_LIBS}
 )
 
-add_executable(kitti_logger src/kitti_logger.cpp)
+add_executable(kitti_publisher src/kitti_publisher.cpp)
 
-target_link_libraries(kitti_logger
+target_link_libraries(kitti_publisher
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
 )
