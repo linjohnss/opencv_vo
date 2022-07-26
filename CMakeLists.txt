@@ -35,3 +35,10 @@ target_link_libraries(kitti_publisher
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
 )
+
+add_executable(rgbd_vo src/rgbd_vo.cpp)
+
+target_link_libraries(rgbd_vo
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
