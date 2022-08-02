@@ -75,6 +75,44 @@ void featureDetection(cv::Mat img, std::vector<cv::Point2f> &points,
     }
 }
 
+// void findFeatureMatch(cv::Mat img_1, cv::Mat img_2,
+//                       std::vector<cv::Point2f> &points1,
+//                       std::vector<cv::Point2f> &points2) {
+//     cv::Mat descriptors_1;
+//     cv::Mat descriptors_2;
+//     std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
+//     cv::Ptr<cv::ORB> orb = cv::ORB::create(MAX_NUM_FEAT);
+//     orb->detectAndCompute(img_1, cv::Mat(), keypoints_1, descriptors_1);
+//     orb->detectAndCompute(img_2, cv::Mat(), keypoints_2, descriptors_2);
+//     cv::Ptr<cv::DescriptorMatcher> matcher =
+//         cv::BFMatcher::create(cv::NORM_HAMMING);
+
+//     std::vector<cv::DMatch> matches;
+//     matcher->match(descriptors_1, descriptors_2, matches);
+//     double minDist = 10000;
+
+//     for (int i = 0; i < descriptors_1.rows; i++) {
+//         double dist = matches[i].distance;
+//         if (dist < minDist) minDist = dist;
+//     }
+
+//     std::vector<cv::DMatch> goodmatches;
+//     for (int i = 0; i < descriptors_1.rows; i++) {
+//         if (matches[i].distance <= std::max(2 * minDist, 30.0)) {
+//             goodmatches.push_back(matches[i]);
+//         }
+//     }
+
+//     std::vector<cv::Point2f> pt_1, pt_2;
+//     for (int i = 0; i < (int)goodmatches.size(); i++) {
+//         pt_1.push_back(keypoints_1[goodmatches[i].queryIdx].pt);
+//         pt_2.push_back(keypoints_2[goodmatches[i].trainIdx].pt);
+//     }
+
+//     points1 = pt_1;
+//     points2 = pt_2;
+// }
+
 void findFeatureMatch(cv::Mat img_1, cv::Mat img_2,
                       std::vector<cv::Point2f> &points1,
                       std::vector<cv::Point2f> &points2) {
@@ -96,65 +134,37 @@ void findFeatureMatch(cv::Mat img_1, cv::Mat img_2,
         if (dist < minDist) minDist = dist;
     }
 
-    std::vector<cv::DMatch> goodmatches;
+    // std::vector<cv::DMatch> goodmatches;
+    // std::vector<cv::Point2f> pt_1, pt_2;
+    points1.empty();
+    points2.empty();
+    // goodmatches.empty();
     for (int i = 0; i < descriptors_1.rows; i++) {
         if (matches[i].distance <= std::max(2 * minDist, 30.0)) {
-            goodmatches.push_back(matches[i]);
+            // goodmatches.push_back(matches[i]);
+            points1.push_back(keypoints_1[matches[i].queryIdx].pt);
+            points2.push_back(keypoints_2[matches[i].trainIdx].pt);
         }
     }
-
-    std::vector<cv::Point2f> pt_1, pt_2;
-    for (int i = 0; i < (int)goodmatches.size(); i++) {
-        pt_1.push_back(keypoints_1[goodmatches[i].queryIdx].pt);
-        pt_2.push_back(keypoints_2[goodmatches[i].trainIdx].pt);
-    }
-
-    points1 = pt_1;
-    points2 = pt_2;
 }
 
-void feature2Dto3D(cv::Mat depth_1, std::vector<cv::Point2f> &points1,
-                      std::vector<cv::Point3f> &depth) {
-    std::vector<cv::Point3f> d_1;
-    for (int i=0; i < points1.size(); i++) {
-        uint d = depth_1.ptr<unsigned int>(int(points1[i].y))[int(points1[i].x)];
-        if (d == 0)
+cv::Point2d pixel2cam(const cv::Point2d &p, const cv::Mat &K) {
+    return cv::Point2d
+    (
+      (p.x - K.at<double>(0, 2)) / K.at<double>(0, 0),
+      (p.y - K.at<double>(1, 2)) / K.at<double>(1, 1)
+    );
+}
+
+void create3DPoint(cv::Mat img_depth, std::vector<cv::Point2f> &points1,
+                      std::vector<cv::Point3f> &point3D, cv::Mat cameraMatrix) {
+    point3D.empty();
+    for (cv::Point2d p:points1) {
+        uint32_t d = img_depth.ptr<uint32_t>(int(p.y))[int(p.x)];
+        if (d == 0)   // bad depth
             continue;
-        double dd = d / 1000.0;
-        d_1.push_back(cv::Point3d(points1[i].x * dd, points1[i].y * dd, dd));
+        float dd = d / 5000.0;
+        cv::Point2d p1 = pixel2cam(p, cameraMatrix);
+        point3D.push_back(cv::Point3f(p1.x * dd, p1.y * dd, dd));
     }
-
-    depth = d_1;
-}
-
-void featureMatch(std::vector<cv::Point2f> &points1,
-                  std::vector<cv::Point2f> &points2, cv::Mat &descriptors_1,
-                  cv::Mat &descriptors_2) {
-    cv::Ptr<cv::DescriptorMatcher> matcher =
-        cv::BFMatcher::create(cv::NORM_HAMMING);
-
-    std::vector<cv::DMatch> matches;
-    matcher->match(descriptors_1, descriptors_2, matches);
-    double minDist = 10000;
-
-    for (int i = 0; i < descriptors_1.rows; i++) {
-        double dist = matches[i].distance;
-        if (dist < minDist) minDist = dist;
-    }
-
-    std::vector<cv::DMatch> goodmatches;
-    for (int i = 0; i < descriptors_1.rows; i++) {
-        if (matches[i].distance <= std::max(2 * minDist, 30.0)) {
-            goodmatches.push_back(matches[i]);
-        }
-    }
-
-    std::vector<cv::Point2f> pt_1, pt_2;
-    for (int i = 0; i < (int)goodmatches.size(); i++) {
-        pt_1.push_back(points1[goodmatches[i].queryIdx]);
-        pt_2.push_back(points2[goodmatches[i].trainIdx]);
-    }
-
-    points1 = pt_1;
-    points2 = pt_2;
 }
