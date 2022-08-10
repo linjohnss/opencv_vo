@@ -75,69 +75,29 @@ void featureDetection(cv::Mat img, std::vector<cv::Point2f> &points,
     }
 }
 
-// void findFeatureMatch(cv::Mat img_1, cv::Mat img_2,
-//                       std::vector<cv::Point2f> &points1,
-//                       std::vector<cv::Point2f> &points2) {
-//     cv::Mat descriptors_1;
-//     cv::Mat descriptors_2;
-//     std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
-//     cv::Ptr<cv::ORB> orb = cv::ORB::create(MAX_NUM_FEAT);
-//     orb->detectAndCompute(img_1, cv::Mat(), keypoints_1, descriptors_1);
-//     orb->detectAndCompute(img_2, cv::Mat(), keypoints_2, descriptors_2);
-//     cv::Ptr<cv::DescriptorMatcher> matcher =
-//         cv::BFMatcher::create(cv::NORM_HAMMING);
-
-//     std::vector<cv::DMatch> matches;
-//     matcher->match(descriptors_1, descriptors_2, matches);
-//     double minDist = 10000;
-
-//     for (int i = 0; i < descriptors_1.rows; i++) {
-//         double dist = matches[i].distance;
-//         if (dist < minDist) minDist = dist;
-//     }
-
-//     std::vector<cv::DMatch> goodmatches;
-//     for (int i = 0; i < descriptors_1.rows; i++) {
-//         if (matches[i].distance <= std::max(2 * minDist, 30.0)) {
-//             goodmatches.push_back(matches[i]);
-//         }
-//     }
-
-//     std::vector<cv::Point2f> pt_1, pt_2;
-//     for (int i = 0; i < (int)goodmatches.size(); i++) {
-//         pt_1.push_back(keypoints_1[goodmatches[i].queryIdx].pt);
-//         pt_2.push_back(keypoints_2[goodmatches[i].trainIdx].pt);
-//     }
-
-//     points1 = pt_1;
-//     points2 = pt_2;
-// }
-
-void findFeatureMatch(cv::Mat img_1, cv::Mat img_2,
+void findFeatureMatch(const cv::Mat img_1, const cv::Mat img_2,
                       std::vector<cv::Point2f> &points1,
                       std::vector<cv::Point2f> &points2) {
-    cv::Mat descriptors_1;
-    cv::Mat descriptors_2;
-    std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
     cv::Ptr<cv::ORB> orb = cv::ORB::create(MAX_NUM_FEAT);
+    cv::Mat descriptors_1, descriptors_2;
+    std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::BFMatcher::create(cv::NORM_HAMMING);
     orb->detectAndCompute(img_1, cv::Mat(), keypoints_1, descriptors_1);
     orb->detectAndCompute(img_2, cv::Mat(), keypoints_2, descriptors_2);
-    cv::Ptr<cv::DescriptorMatcher> matcher =
-        cv::BFMatcher::create(cv::NORM_HAMMING);
-
     std::vector<cv::DMatch> matches;
     matcher->match(descriptors_1, descriptors_2, matches);
-    double minDist = 10000;
-
+    double minDist = 10000, maxDist = 0;
     for (int i = 0; i < descriptors_1.rows; i++) {
         double dist = matches[i].distance;
         if (dist < minDist) minDist = dist;
+        if (dist > maxDist) maxDist = dist;
     }
-
+    printf("-- Max dist : %f \n", maxDist);
+    printf("-- Min dist : %f \n", minDist);
     // std::vector<cv::DMatch> goodmatches;
     // std::vector<cv::Point2f> pt_1, pt_2;
-    points1.empty();
-    points2.empty();
+    points1.clear();
+    points2.clear();
     // goodmatches.empty();
     for (int i = 0; i < descriptors_1.rows; i++) {
         if (matches[i].distance <= std::max(2 * minDist, 30.0)) {
@@ -148,19 +108,48 @@ void findFeatureMatch(cv::Mat img_1, cv::Mat img_2,
     }
 }
 
+void findFeatureMatch(const cv::Mat &img_1, const cv::Mat &img_2,
+                          std::vector<cv::KeyPoint> &keypoints_1,
+                          std::vector<cv::KeyPoint> &keypoints_2,
+                          std::vector<cv::DMatch> &matches) {
+    cv::Ptr<cv::ORB> orb = cv::ORB::create(MAX_NUM_FEAT);
+    cv::Mat descriptors_1, descriptors_2;
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::BFMatcher::create(cv::NORM_HAMMING);
+    orb->detectAndCompute(img_1, cv::Mat(), keypoints_1, descriptors_1);
+    orb->detectAndCompute(img_2, cv::Mat(), keypoints_2, descriptors_2);
+    std::vector<cv::DMatch> match;
+    matcher->match(descriptors_1, descriptors_2, match);
+
+    double min_dist = 10000, max_dist = 0;
+
+    for (int i = 0; i < descriptors_1.rows; i++) {
+        double dist = match[i].distance;
+        if (dist < min_dist) min_dist = dist;
+        if (dist > max_dist) max_dist = dist;
+    }
+
+    printf("-- Max dist : %f \n", max_dist);
+    printf("-- Min dist : %f \n", min_dist);
+    for (int i = 0; i < descriptors_1.rows; i++) {
+        if (match[i].distance <= std::max(2 * min_dist, 30.0)) {
+            matches.push_back(match[i]);
+        }
+    }
+}
+
 cv::Point2d pixel2cam(const cv::Point2d &p, const cv::Mat &K) {
     return cv::Point2d
     (
-      (p.x - K.at<double>(0, 2)) / K.at<double>(0, 0),
-      (p.y - K.at<double>(1, 2)) / K.at<double>(1, 1)
+        (p.x - K.at<double>(0, 2)) / K.at<double>(0, 0),
+        (p.y - K.at<double>(1, 2)) / K.at<double>(1, 1)
     );
 }
 
 void create3DPoint(cv::Mat img_depth, std::vector<cv::Point2f> &points1,
                       std::vector<cv::Point3f> &point3D, cv::Mat cameraMatrix) {
-    point3D.empty();
+    point3D.clear();
     for (cv::Point2d p:points1) {
-        uint32_t d = img_depth.ptr<uint32_t>(int(p.y))[int(p.x)];
+        ushort d = img_depth.ptr<unsigned short>(int(p.y))[int(p.x)];
         if (d == 0)   // bad depth
             continue;
         float dd = d / 5000.0;
